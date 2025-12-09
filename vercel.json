@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/api/victims", "destination": "/api/victims.js" },
+    { "source": "/api/stats", "destination": "/api/stats.js" },
+    { "source": "/api/command", "destination": "/api/command.js" }
+  ]
+}

